@@ -1,7 +1,9 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
+# As on Feb 25, 2022 HAB causes CAAM_JR driver error on UEI PDNA-SX6-RT, hence disabled
+
 # HAB Features
-SRC_URI += "file://0001-Enable-secure-boot-support.patch"
+# SRC_URI += "file://0001-Enable-secure-boot-support.patch"
 # UEI doesn't require U-Boot encrypted, hence disabled by default
 # SRC_URI += "file://0002-Enable-encrypted-boot-support.patch"
 
