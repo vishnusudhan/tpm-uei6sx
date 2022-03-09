@@ -21,7 +21,7 @@ index 29f4c480a2..b68657ab71 100644
  
  CONFIG_OF_LIBFDT=y
 +
-+# Added by Yocto to support the HAB features
++# Added by BGN-ESSA to support the HAB features
 +# (Secure boot)
 +CONFIG_IMX_HAB=y
 diff --git a/configs/uei-pdna6sx_qspi_defconfig b/configs/uei-pdna6sx_qspi_defconfig
@@ -33,6 +33,6 @@ index 173ea152d8..fdc8d1a283 100644
  
  CONFIG_OF_LIBFDT=y
 +
-+# Added by Yocto to support the HAB features
++# Added by BGN-ESSA to support the HAB features
 +# (Secure boot)
 +CONFIG_IMX_HAB=y

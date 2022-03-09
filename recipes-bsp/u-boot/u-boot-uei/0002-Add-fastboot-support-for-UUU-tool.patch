@@ -1,0 +1,57 @@
+From 52814506abdf192fedd785d317500e64470f2ca0 Mon Sep 17 00:00:00 2001
+From: danie007 <daniel.selvan@jasmin-infotech.com>
+Date: Wed, 9 Mar 2022 12:47:48 +0530
+Subject: [PATCH] Add fastboot support for UUU tool
+
+- Fasboot commands are enabled
+
+Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+---
+ configs/uei-pdna6sx-66Mhz_qspi_defconfig | 11 +++++++++++
+ configs/uei-pdna6sx_qspi_defconfig       | 11 +++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/configs/uei-pdna6sx-66Mhz_qspi_defconfig b/configs/uei-pdna6sx-66Mhz_qspi_defconfig
+index df87dc317a..2c43bd3ea7 100644
+--- a/configs/uei-pdna6sx-66Mhz_qspi_defconfig
++++ b/configs/uei-pdna6sx-66Mhz_qspi_defconfig
+@@ -255,6 +255,17 @@ CONFIG_HEXDUMP=y
+ 
+ CONFIG_OF_LIBFDT=y
+ 
++# Added by BGN-ESSA to support fastboot commands
++CONFIG_FASTBOOT=y
++CONFIG_USB_FUNCTION_FASTBOOT=y
++CONFIG_FASTBOOT_BUF_ADDR=0x83800000
++CONFIG_FASTBOOT_BUF_SIZE=0x40000000
++CONFIG_FASTBOOT_USB_DEV=0
++CONFIG_FASTBOOT_FLASH=y
++CONFIG_FASTBOOT_UUU_SUPPORT=y
++CONFIG_FSL_FASTBOOT=y
++CONFIG_CMD_FASTBOOT=y
++
+ # Added by BGN-ESSA to support the HAB features
+ # (Secure boot)
+ CONFIG_IMX_HAB=y
+diff --git a/configs/uei-pdna6sx_qspi_defconfig b/configs/uei-pdna6sx_qspi_defconfig
+index 1ea58c85e4..52df074b60 100644
+--- a/configs/uei-pdna6sx_qspi_defconfig
++++ b/configs/uei-pdna6sx_qspi_defconfig
+@@ -255,6 +255,17 @@ CONFIG_HEXDUMP=y
+ 
+ CONFIG_OF_LIBFDT=y
+ 
++# Added by BGN-ESSA to support fastboot commands
++CONFIG_FASTBOOT=y
++CONFIG_USB_FUNCTION_FASTBOOT=y
++CONFIG_FASTBOOT_BUF_ADDR=0x83800000
++CONFIG_FASTBOOT_BUF_SIZE=0x40000000
++CONFIG_FASTBOOT_USB_DEV=0
++CONFIG_FASTBOOT_FLASH=y
++CONFIG_FASTBOOT_UUU_SUPPORT=y
++CONFIG_FSL_FASTBOOT=y
++CONFIG_CMD_FASTBOOT=y
++
+ # Added by BGN-ESSA to support the HAB features
+ # (Secure boot)
+ CONFIG_IMX_HAB=y

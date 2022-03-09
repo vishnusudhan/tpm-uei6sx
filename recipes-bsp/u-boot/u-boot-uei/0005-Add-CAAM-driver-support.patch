@@ -1,0 +1,34 @@
+From f5baf434a0ba1ccfc3bbadad3ac617709a0e4393 Mon Sep 17 00:00:00 2001
+From: danie007 <daniel.selvan@jasmin-infotech.com>
+Date: Wed, 9 Mar 2022 12:42:20 +0530
+Subject: [PATCH] Add CAAM driver support in UEI board Kconfig
+
+UEI pdnasx6 did not has MISC driver support needed to enable CAAM and
+HAB. Hence it's added temporarily in here until UEI fixes this in their
+layer
+
+ERROR: HAB caused "CAAM_JR" driver error
+
+FLAG: TEMP (awaiting upstream fix from UEI)
+
+Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+---
+ arch/arm/mach-imx/mx6/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mx6/Kconfig b/arch/arm/mach-imx/mx6/Kconfig
+index 57ac9b843a..2109ba82a8 100644
+--- a/arch/arm/mach-imx/mx6/Kconfig
++++ b/arch/arm/mach-imx/mx6/Kconfig
+@@ -853,6 +853,11 @@ config TARGET_UEIPDNASX6
+ 	select DM
+ 	select DM_THERMAL
+ 	select SUPPORT_SPL
++	select FSL_CAAM
++	select FSL_BLOB
++	select MISC
++	select ARCH_MISC_INIT
++	select RNG_SELF_TEST
+ 	imply CMD_DM
+ 
+ config TARGET_SOFTING_VINING_2000
