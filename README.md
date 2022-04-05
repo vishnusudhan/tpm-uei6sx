@@ -58,14 +58,19 @@ To contribute to the development of this BSP and/or submit patches for new board
 
 ## Building test image
 
+To enable a developer/tester to easily flash multiple variations/boards, the test image is concentrating on the following aspects:
+
+- Minimal size
+- Minimal build time
+- Traceability (build time)
+- Easy access to components (No U-Boot & Linux passwords)
+
 1. Use the latest BGN-ESSA layer at https://github.com/bgnetworks/meta-essa-uei6sx/tree/hardknott
 2. Add the following lines on `conf/local.conf` file:
    ```bash
-   # Use with "core-image-minimal" to build a minimal sized image
-   IMAGE_OVERHEAD_FACTOR = "1.1"
-   WKS_FILE = "essa-qspi-boot-dm.wks.in"
+   TEST_BUILD = "1"
    ```
-3. un the `bitbake core-image-minimal` command
+3. Run the `bitbake core-image-minimal` command
 
 ## Maintainer(s)
 
