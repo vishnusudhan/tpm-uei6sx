@@ -1,10 +1,12 @@
 <!--
 # File: README.md
 # Author: Daniel Selvan, Jasmin Infotech
-# Copyright (c) 2021 BG Networks, Inc.
+# Copyright (c) 2022 BG Networks, Inc.
 #
 # See LICENSE file for license details.
 -->
+
+# `TODO` - Update for UEI board
 
 # meta-bgn-essa
 
@@ -53,6 +55,17 @@ To download a detailed guide to BG Networks ESSA click [here](https://bgnet.work
 ## Contributing
 
 To contribute to the development of this BSP and/or submit patches for new boards please feel free to [create pull requests](https://github.com/bgnetworks/meta-bgn-essa/pulls).
+
+## Building test image
+
+1. Use the latest BGN-ESSA layer at https://github.com/bgnetworks/meta-essa-uei6sx/tree/hardknott
+2. Add the following lines on `conf/local.conf` file:
+   ```bash
+   # Use with "core-image-minimal" to build a minimal sized image
+   IMAGE_OVERHEAD_FACTOR = "1.1"
+   WKS_FILE = "essa-qspi-boot-dm.wks.in"
+   ```
+3. un the `bitbake core-image-minimal` command
 
 ## Maintainer(s)
 

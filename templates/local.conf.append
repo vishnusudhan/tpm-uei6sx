@@ -5,10 +5,13 @@
 VIRTUAL-RUNTIME_init_manager = "systemd"
 VIRTUAL-RUNTIME_initscript = "systemd-compat-units"
 
-IMAGE_OVERHEAD_FACTOR = "5"
-
 DISTRO_FEATURES_append = " systemd"
 
 # Uncompressed image, consume more space
 # to be used by UUU tool
 IMAGE_FSTYPES_append = " wic"
+
+# Use with "core-image-minimal"
+# Uncomment the following lines to build a minimal sized image (for testing)
+# IMAGE_OVERHEAD_FACTOR = "1.1"
+# WKS_FILE = "essa-qspi-boot-dm.wks.in"
