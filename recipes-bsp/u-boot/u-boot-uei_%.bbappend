@@ -17,3 +17,6 @@ SRC_URI += "file://0005-Add-CAAM-driver-support.patch"
 
 # Test build
 SRC_URI += "${@bb.utils.contains('TEST_BUILD', '1', 'file://0006-Remove-password-for-test-build.patch', '', d)}"
+
+# WGET support
+SRC_URI += "file://0007-Add-TCP-wget-command.patch"
