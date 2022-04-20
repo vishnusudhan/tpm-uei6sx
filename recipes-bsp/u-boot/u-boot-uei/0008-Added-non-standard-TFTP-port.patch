@@ -1,0 +1,29 @@
+From cfbff1675189f3a4477a862be8ea1be111dcf4a1 Mon Sep 17 00:00:00 2001
+From: danie007 <daniel.selvan@jasmin-infotech.com>
+Date: Tue, 19 Apr 2022 12:37:35 +0530
+Subject: [PATCH] Added support to non-standard TFTP port
+
+Based on Sam comments & https://lists.denx.de/pipermail/u-boot/2014-April/177090.html
+
+This allows us to configure the TFTP server port (default: 69) by entering the
+following command on the U-Boot console:
+
+setenv tftpdstp 7000
+
+Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+---
+ include/configs/pdnasx6.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
+index 74875b5806..fd3afef011 100644
+--- a/include/configs/pdnasx6.h
++++ b/include/configs/pdnasx6.h
+@@ -16,6 +16,7 @@
+ #include "imx_env.h"
+ 
+ #define CONFIG_DBG_MONITOR
++#define CONFIG_TFTP_PORT
+ 
+ #ifdef CONFIG_SPL
+ #include "imx6_spl.h"
