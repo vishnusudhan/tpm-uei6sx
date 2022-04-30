@@ -3,7 +3,7 @@
 # sys_setup.sh
 # Encrypt a block with CAAM black key and create services to automount on startup
 #
-# 20.01.2022
+# 29.04.2022
 # Daniel Selvan, Jasmin Infotech
 
 ###################################################################################################
@@ -23,6 +23,13 @@ mpoint="/dmblk"
 
     # Creating a random black key
     caam-keygen create enckey ecb -s 16
+
+    [ $? -ne 0 ] && {
+        echo "ERROR: caam-keygen failed!"
+
+        echo "Exiting..."
+        return -1
+    }
 
     # Adding the black key in kernel keyring
     cat /data/caam/enckey | keyctl padd logon enckey: @s
