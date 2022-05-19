@@ -56,6 +56,17 @@ To enable a developer/tester to easily flash multiple variations/boards, the tes
    ```
 3. Run the `bitbake core-image-minimal` command
 
+## Docker build
+Yocto gatesgarth posing build issues on Ubuntu 22.04 (_as on 19 May 2022_), hence running in a container:
+```bash
+mkdir -p /yocto_test
+docker run --rm -it -v ~/:/yocto_test crops/poky:ubuntu-20.04 --workdir=/yocto_test
+# On other terminal/tab
+docker exec -u root $(docker ps -aqf "name=^serene_yonath$") apt-get install -y xxd bison
+# Usual bitbake commands
+```
+**NOTE**: Though this method is only tested on Ubuntu as of now, it can be [even used in Windows](https://github.com/crops/docker-win-mac-docs/wiki/Windows-Instructions-%28Docker-Toolbox%29) for building Yocto images
+
 ## Maintainer(s)
 
 The author(s) and maintainer(s) of this layer is(are):
