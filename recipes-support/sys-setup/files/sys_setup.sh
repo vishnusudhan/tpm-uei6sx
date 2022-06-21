@@ -3,7 +3,7 @@
 # sys_setup.sh
 # Encrypt a block with CAAM black key and create services to automount on startup
 #
-# 29.04.2022
+# 21.06.2022
 # Daniel Selvan, Jasmin Infotech
 
 ###################################################################################################
@@ -22,14 +22,14 @@ mpoint="/dmblk"
     dmsetup remove -f crypt_target 2>/dev/null
 
     # Creating a random black key
-    caam-keygen create enckey ecb -s 16
+    output=$(caam-keygen create enckey ecb -s 16 2>&1)
 
-    [ $? -ne 0 ] && {
+    if [ $? -ne 0 ] || [[ $output =~ "usage" ]]; then
         echo "ERROR: caam-keygen failed!"
 
         echo "Exiting..."
-        return -1
-    }
+        return 1
+    fi
 
     # Adding the black key in kernel keyring
     cat /data/caam/enckey | keyctl padd logon enckey: @s
@@ -82,9 +82,10 @@ EOF
     cat >/etc/systemd/system/crypt-target.service <<EOF
 [Unit]
 Description=Import black key from the black key blob, set it in the kernel keyring, open the DM-Crypt partition with black key and mounts it
-DefaultDependencies=no
+DefaultDependencies=yes
 Conflicts=shutdown.target
-After=local-fs.target
+Requires=systemd-modules-load.service
+After=local-fs.target systemd-modules-load.service
 OnFailure=emergency.target
 OnFailureJobMode=replace-irreversibly
 Before=rc-local.service
