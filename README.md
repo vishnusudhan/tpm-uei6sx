@@ -22,9 +22,9 @@ The following board is the only board tested in this release.
 
 See the Quick Start Guide for instructions on installing repo.
 
-#### Build
+### Build
 
-_NOTE_: This integration is tested for `imx-image-minimal `
+_NOTE_: This integration is tested for `imx-image-minimal`
 
 ```bash
 source setup-environment <build_folder>
@@ -48,12 +48,14 @@ To enable a developer/tester to easily flash multiple variations/boards, the tes
 - Traceability (build time)
 - Easy access to components (No U-Boot & Linux passwords)
 
-1. Use the latest BGN-ESSA layer at https://github.com/bgnetworks/meta-essa-uei6sx/tree/hardknott
+1. Use the [latest BGN-ESSA layer](https://github.com/bgnetworks/meta-essa-uei6sx/tree/hardknott)
 
 2. Add the following lines on `conf/local.conf` file:
+
    ```bash
    TEST_BUILD = "1"
    ```
+
 3. Run the `bitbake core-image-minimal` command
 
 ## Docker build
@@ -62,9 +64,9 @@ Yocto gatesgarth posing build issues on Ubuntu 22.04 (_as on 19 May 2022_), henc
 
 ```bash
 mkdir -p /yocto_test
-docker run --rm -it -v ~/:/yocto_test crops/poky:ubuntu-20.04 --workdir=/yocto_test
+docker run --name uei_builder --rm -it -v ~/:/yocto_test crops/poky:ubuntu-20.04 --workdir=/yocto_test
 # On other terminal/tab
-docker exec -u root $(docker ps -aqf "name=^serene_yonath$") apt-get install -y xxd bison
+docker exec -u root $(docker ps -aqf "name=^uei_builder$") apt-get install -y xxd bison
 # Usual bitbake commands
 ```
 
