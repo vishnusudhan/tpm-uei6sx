@@ -1,0 +1,53 @@
+From f3b5ce110aa2619722e4c5254488e314faac27b8 Mon Sep 17 00:00:00 2001
+From: danie007 <daniel.selvan@jasmin-infotech.com>
+Date: Mon, 30 Jan 2023 15:44:37 +0530
+Subject: [PATCH] Added HAB authentication for uCOS boot
+
+- This decrpts the encrypted uCOS and boot it
+- "hab_auth_img_or_fail" is used which does not allow booting in open
+  board. This needs to be analysed further.
+
+NOTE:
+1. This is verified in closed UEI board and works as expected.
+2. The total size allocated to uCOS at UEI QSPI is 0x00300000 and hence
+   the IVT and size are hardcoded in U-Boot environment
+
+Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
+Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+---
+ include/configs/pdnasx6.h | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
+index fd3afef011..b63e9776e5 100644
+--- a/include/configs/pdnasx6.h
++++ b/include/configs/pdnasx6.h
+@@ -146,12 +146,16 @@
+ 	"ucos_bin_file=solox-ucosii.bin\0" \
+ 	"ucos_bin_addr=0x200000\0" \
+ 	"ucos_bin_size=0x300000\0" \
+-	"ucosboot=echo Booting uC/OS ...;" \
++	"ucos_ivt_addr=0x2FDF00\0" \
++	"ucosboot=echo Booting encrypted uC/OS with HAB authentication...; " \
+ 		"fecinit; " \
+ 		"sf probe; " \
+ 		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
+-		"dcache off; " \
+-		"go 80000000\0" \
++		 "if hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; then " \
++			"dcache off; go 80000000; " \
++		"else " \
++			"echo ERROR: uCOS HAB AUTH failed; " \
++		"fi;\0" \
+ 	"ucosnetboot=echo Download uC/OS image via tftp ...;" \
+ 		"fecinit; " \
+ 		"tftp 80000000 ${ucos_bin_file}; " \
+@@ -178,7 +182,7 @@
+ 	"usb start; run usbboot" 
+ #else
+ #define CONFIG_BOOTCOMMAND \
+-	"run mmcboot" 
++	"run ucosboot" 
+ #endif
+ 
+ /* Miscellaneous configurable options */
