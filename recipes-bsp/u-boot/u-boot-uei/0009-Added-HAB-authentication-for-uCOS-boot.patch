@@ -1,9 +1,9 @@
 From f3b5ce110aa2619722e4c5254488e314faac27b8 Mon Sep 17 00:00:00 2001
 From: danie007 <daniel.selvan@jasmin-infotech.com>
-Date: Mon, 30 Jan 2023 15:44:37 +0530
+Date: Tue, 14 Feb 2023 11:52:37 +0530
 Subject: [PATCH] Added HAB authentication for uCOS boot
 
-- This decrpts the encrypted uCOS and boot it
+- This decrpts the encrypted uCOS and boot it (change bootcmd in the ENV)
 - "hab_auth_img_or_fail" is used which does not allow booting in open
   board. This needs to be analysed further.
 
@@ -15,8 +15,8 @@ NOTE:
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
 Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
 ---
- include/configs/pdnasx6.h | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ include/configs/pdnasx6.h | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
 index fd3afef011..b63e9776e5 100644
@@ -42,12 +42,3 @@ index fd3afef011..b63e9776e5 100644
  	"ucosnetboot=echo Download uC/OS image via tftp ...;" \
  		"fecinit; " \
  		"tftp 80000000 ${ucos_bin_file}; " \
-@@ -178,7 +182,7 @@
- 	"usb start; run usbboot" 
- #else
- #define CONFIG_BOOTCOMMAND \
--	"run mmcboot" 
-+	"run ucosboot" 
- #endif
- 
- /* Miscellaneous configurable options */
