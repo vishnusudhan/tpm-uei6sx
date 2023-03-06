@@ -1,4 +1,4 @@
-From e9aa8a8fc6552210e40b48e884766f96eb592ad0 Mon Sep 17 00:00:00 2001
+From 2ab85785d61d18e7d50d4d546392c912ff18e77b Mon Sep 17 00:00:00 2001
 From: danie007 <daniel.selvan@jasmin-infotech.com>
 Date: Fri, 3 Mar 2023 17:16:27 +0530
 Subject: [PATCH] Added HAB authentication check for uCOS boot
@@ -17,8 +17,8 @@ Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
 Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
 ---
  arch/arm/mach-imx/hab.c   | 19 +++++++++++++++++++
- include/configs/pdnasx6.h | 10 +++++++---
- 2 files changed, 26 insertions(+), 3 deletions(-)
+ include/configs/pdnasx6.h | 11 ++++++++---
+ 2 files changed, 27 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
 index e2ede9985d..067d4dbe07 100644
@@ -58,10 +58,10 @@ index e2ede9985d..067d4dbe07 100644
  
  /* Get CSF Header length */
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..7ebd474e84 100644
+index fd3afef011..44c0b4a0bd 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
-@@ -146,12 +146,16 @@
+@@ -146,12 +146,17 @@
  	"ucos_bin_file=solox-ucosii.bin\0" \
  	"ucos_bin_addr=0x200000\0" \
  	"ucos_bin_size=0x300000\0" \
@@ -73,6 +73,7 @@ index fd3afef011..7ebd474e84 100644
  		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
 -		"dcache off; " \
 -		"go 80000000\0" \
++		"sec_state; " \
 +		"if test ${closed} = yes; then " \
 +			"echo Decrypting uC/OS with HAB authentication...; " \
 +		 	"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
