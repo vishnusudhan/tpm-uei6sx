@@ -1,9 +1,9 @@
-From 2ab85785d61d18e7d50d4d546392c912ff18e77b Mon Sep 17 00:00:00 2001
+From 8399dc944f14027227dcdee61d11284a50ae128f Mon Sep 17 00:00:00 2001
 From: danie007 <daniel.selvan@jasmin-infotech.com>
 Date: Fri, 3 Mar 2023 17:16:27 +0530
 Subject: [PATCH] Added HAB authentication check for uCOS boot
 
-- Added "sec_state" command in u-boot which returns the state of the
+- Added "is_sec_state" command in u-boot which returns the state of the
   SEC_CONFIG fuse
 - If board is closed only authenticated/encrypted uCOS is allowed to
   boot. This is ensured by hab_auth_img_or_fail
@@ -16,15 +16,15 @@ NOTE:
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
 Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
 ---
- arch/arm/mach-imx/hab.c   | 19 +++++++++++++++++++
- include/configs/pdnasx6.h | 11 ++++++++---
- 2 files changed, 27 insertions(+), 3 deletions(-)
+ arch/arm/mach-imx/hab.c   | 18 ++++++++++++++++++
+ include/configs/pdnasx6.h | 10 +++++++---
+ 2 files changed, 25 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
-index e2ede9985d..067d4dbe07 100644
+index e2ede9985d..c417f2113b 100644
 --- a/arch/arm/mach-imx/hab.c
 +++ b/arch/arm/mach-imx/hab.c
-@@ -656,6 +656,19 @@ static int do_hab_version(struct cmd_tbl *cmdtp, int flag, int argc,
+@@ -656,6 +656,18 @@ static int do_hab_version(struct cmd_tbl *cmdtp, int flag, int argc,
  	return 0;
  }
  
@@ -33,24 +33,23 @@ index e2ede9985d..067d4dbe07 100644
 +{
 +	if (imx_hab_is_enabled())
 +	{
-+		env_set("closed", "yes");
-+		return 0;
++		// HAB closed
++		return CMD_RET_SUCCESS;
 +	}
 +
-+	env_set("closed", "no");
-+	return 1;
++	return CMD_RET_FAILURE;
 +}
 +
  static int do_authenticate_image_or_failover(struct cmd_tbl *cmdtp, int flag,
  					     int argc, char *const argv[])
  {
-@@ -727,6 +740,12 @@ U_BOOT_CMD(
+@@ -727,6 +739,12 @@ U_BOOT_CMD(
  		""
  	  );
  
 +U_BOOT_CMD(
-+		sec_state, 1, 0, do_sec_state,
-+		"return 1 if SEC_CONFIG fuse is closed otherwise 0",
++		is_sec_state, 1, 0, do_sec_state,
++		"return 0 if SEC_CONFIG fuse is closed otherwise 1",
 +		""
 +	  );
 +
@@ -58,10 +57,10 @@ index e2ede9985d..067d4dbe07 100644
  
  /* Get CSF Header length */
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..44c0b4a0bd 100644
+index fd3afef011..354fea6308 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
-@@ -146,12 +146,17 @@
+@@ -146,12 +146,16 @@
  	"ucos_bin_file=solox-ucosii.bin\0" \
  	"ucos_bin_addr=0x200000\0" \
  	"ucos_bin_size=0x300000\0" \
@@ -73,8 +72,7 @@ index fd3afef011..44c0b4a0bd 100644
  		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
 -		"dcache off; " \
 -		"go 80000000\0" \
-+		"sec_state; " \
-+		"if test ${closed} = yes; then " \
++		"if is_sec_state; then " \
 +			"echo Decrypting uC/OS with HAB authentication...; " \
 +		 	"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
 +		"fi; " \
