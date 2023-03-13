@@ -1,25 +1,63 @@
-From f3b5ce110aa2619722e4c5254488e314faac27b8 Mon Sep 17 00:00:00 2001
+From 8399dc944f14027227dcdee61d11284a50ae128f Mon Sep 17 00:00:00 2001
 From: danie007 <daniel.selvan@jasmin-infotech.com>
-Date: Tue, 14 Feb 2023 11:52:37 +0530
-Subject: [PATCH] Added HAB authentication for uCOS boot
+Date: Fri, 3 Mar 2023 17:16:27 +0530
+Subject: [PATCH] Added HAB authentication check for uCOS boot
 
-- This decrpts the encrypted uCOS and boot it (change bootcmd in the ENV)
-- "hab_auth_img_or_fail" is used which does not allow booting in open
-  board. This needs to be analysed further.
+- Added "is_sec_state" command in u-boot which returns the state of the
+  SEC_CONFIG fuse
+- If board is closed only authenticated/encrypted uCOS is allowed to
+  boot. This is ensured by hab_auth_img_or_fail
 
 NOTE:
-1. This is verified in closed UEI board and works as expected.
+1. This is verified in both open & closed UEI board and works as expected
 2. The total size allocated to uCOS at UEI QSPI is 0x00300000 and hence
    the IVT and size are hardcoded in U-Boot environment
 
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
 Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
 ---
+ arch/arm/mach-imx/hab.c   | 18 ++++++++++++++++++
  include/configs/pdnasx6.h | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ 2 files changed, 25 insertions(+), 3 deletions(-)
 
+diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
+index e2ede9985d..c417f2113b 100644
+--- a/arch/arm/mach-imx/hab.c
++++ b/arch/arm/mach-imx/hab.c
+@@ -656,6 +656,18 @@ static int do_hab_version(struct cmd_tbl *cmdtp, int flag, int argc,
+ 	return 0;
+ }
+ 
++static int do_sec_state(struct cmd_tbl *cmdtp, int flag, int argc,
++						char *const argv[])
++{
++	if (imx_hab_is_enabled())
++	{
++		// HAB closed
++		return CMD_RET_SUCCESS;
++	}
++
++	return CMD_RET_FAILURE;
++}
++
+ static int do_authenticate_image_or_failover(struct cmd_tbl *cmdtp, int flag,
+ 					     int argc, char *const argv[])
+ {
+@@ -727,6 +739,12 @@ U_BOOT_CMD(
+ 		""
+ 	  );
+ 
++U_BOOT_CMD(
++		is_sec_state, 1, 0, do_sec_state,
++		"return 0 if SEC_CONFIG fuse is closed otherwise 1",
++		""
++	  );
++
+ #endif /* !defined(CONFIG_SPL_BUILD) */
+ 
+ /* Get CSF Header length */
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..b63e9776e5 100644
+index fd3afef011..354fea6308 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
 @@ -146,12 +146,16 @@
@@ -28,17 +66,17 @@ index fd3afef011..b63e9776e5 100644
  	"ucos_bin_size=0x300000\0" \
 -	"ucosboot=echo Booting uC/OS ...;" \
 +	"ucos_ivt_addr=0x2FDF00\0" \
-+	"ucosboot=echo Booting encrypted uC/OS with HAB authentication...; " \
++	"ucosboot=echo Booting uC/OS ...; " \
  		"fecinit; " \
  		"sf probe; " \
  		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
 -		"dcache off; " \
 -		"go 80000000\0" \
-+		 "if hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; then " \
-+			"dcache off; go 80000000; " \
-+		"else " \
-+			"echo ERROR: uCOS HAB AUTH failed; " \
-+		"fi;\0" \
++		"if is_sec_state; then " \
++			"echo Decrypting uC/OS with HAB authentication...; " \
++		 	"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++		"fi; " \
++		"dcache off; go 80000000;\0" \
  	"ucosnetboot=echo Download uC/OS image via tftp ...;" \
  		"fecinit; " \
  		"tftp 80000000 ${ucos_bin_file}; " \
