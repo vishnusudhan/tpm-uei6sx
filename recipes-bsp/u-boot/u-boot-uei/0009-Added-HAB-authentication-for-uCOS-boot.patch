@@ -1,12 +1,15 @@
-From 8399dc944f14027227dcdee61d11284a50ae128f Mon Sep 17 00:00:00 2001
-From: danie007 <daniel.selvan@jasmin-infotech.com>
-Date: Fri, 3 Mar 2023 17:16:27 +0530
+From 8d5e1b4959d22f2263cc9392c7f37517002e9fec Mon Sep 17 00:00:00 2001
+From: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
+Date: Thu, 4 May 2023 11:08:38 +0530
 Subject: [PATCH] Added HAB authentication check for uCOS boot
 
 - Added "is_sec_state" command in u-boot which returns the state of the
   SEC_CONFIG fuse
 - If board is closed only authenticated/encrypted uCOS is allowed to
   boot. This is ensured by hab_auth_img_or_fail
+- For open board we're checking the flashed uCOS (whether encrypted or
+  not) and issue hab_auth_img if it's an encrypted uCOS. This is
+  achieved by the newly added "sf check_enc" command
 
 NOTE:
 1. This is verified in both open & closed UEI board and works as expected
@@ -14,11 +17,12 @@ NOTE:
    the IVT and size are hardcoded in U-Boot environment
 
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
-Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+Signed-off-by: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
 ---
- arch/arm/mach-imx/hab.c   | 18 ++++++++++++++++++
- include/configs/pdnasx6.h | 10 +++++++---
- 2 files changed, 25 insertions(+), 3 deletions(-)
+ arch/arm/mach-imx/hab.c   | 18 ++++++++++
+ cmd/sf.c                  | 71 +++++++++++++++++++++++++++++++++++++++
+ include/configs/pdnasx6.h | 13 +++++--
+ 3 files changed, 100 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
 index e2ede9985d..c417f2113b 100644
@@ -56,25 +60,125 @@ index e2ede9985d..c417f2113b 100644
  #endif /* !defined(CONFIG_SPL_BUILD) */
  
  /* Get CSF Header length */
+diff --git a/cmd/sf.c b/cmd/sf.c
+index 46346fb9d4..f577065446 100644
+--- a/cmd/sf.c
++++ b/cmd/sf.c
+@@ -318,6 +318,66 @@ static int do_spi_flash_read_write(int argc, char *const argv[])
+ 	return ret == 0 ? 0 : 1;
+ }
+ 
++static int do_hab_enc_check(int argc, char *const argv[])
++{
++	const u32 UCOS_IVT_SIZE = 0x20,
++			  UCOS_CSF_SIZE = 0x2000,
++			  DEK_BLOB_TAG  = 0x81;
++
++	unsigned long addr;
++	void *buf;
++	char *endp;
++	int ret = 1, len = 1;
++	int dev = 0;
++	loff_t start_addr, offset, maxsize;
++
++	if (argc < 3)
++		return CMD_RET_FAILURE;
++
++	addr = simple_strtoul(argv[1], &endp, 16);
++	if (*argv[1] == 0 || *endp != 0)
++		return CMD_RET_FAILURE;
++
++	if (mtd_arg_off_size(argc - 2, &argv[2], &dev, &start_addr, &offset,
++						 &maxsize, MTD_DEV_TYPE_NOR, flash->size))
++		return CMD_RET_FAILURE;
++
++	start_addr += offset + UCOS_CSF_SIZE + UCOS_IVT_SIZE;
++
++	/* Consistency checking */
++	if (start_addr + len > flash->size)
++	{
++		printf("ERROR: attempting %s past flash size (%#x)\n",
++			   argv[0], flash->size);
++		ret = 1;
++	}
++
++	buf = map_physmem(addr, len, MAP_WRBACK);
++	if (!buf && addr)
++	{
++		puts("Failed to map physical memory\n");
++		return CMD_RET_FAILURE;
++	}
++
++	ret = spi_flash_read(flash, start_addr, len, buf);
++	if (ret != 0)
++	{
++		puts("QSPI read error");
++		ret = 1;
++	}
++
++	debug("value @ %#llx is %#x\n", start_addr, *(char *)buf);
++	if (*(char *)buf == DEK_BLOB_TAG)
++	{
++		// Success case
++		ret = 0;
++	}
++
++	unmap_physmem(buf, len);
++
++	return ret;
++}
++
+ static int do_spi_flash_erase(int argc, char *const argv[])
+ {
+ 	int ret;
+@@ -575,6 +635,15 @@ static int do_spi_flash(struct cmd_tbl *cmdtp, int flag, int argc,
+ 		return 1;
+ 	}
+ 
++	if (strcmp(cmd, "check_enc") == 0)
++	{
++		if (do_hab_enc_check(argc, argv) == 0)
++		{
++			return CMD_RET_SUCCESS;
++		}
++		return CMD_RET_FAILURE;
++	}
++
+ 	if (strcmp(cmd, "read") == 0 || strcmp(cmd, "write") == 0 ||
+ 	    strcmp(cmd, "update") == 0)
+ 		ret = do_spi_flash_read_write(argc, argv);
+@@ -612,6 +681,8 @@ U_BOOT_CMD(
+ 	"sf read addr offset|partition len	- read `len' bytes starting at\n"
+ 	"				          `offset' or from start of mtd\n"
+ 	"					  `partition'to memory at `addr'\n"
++	"sf check_enc addr offset|partition len	- Check the presence of HAB encrypted\n"
++	"									  image in the `offset + len' location\n"
+ 	"sf write addr offset|partition len	- write `len' bytes from memory\n"
+ 	"				          at `addr' to flash at `offset'\n"
+ 	"					  or to start of mtd `partition'\n"
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..354fea6308 100644
+index fd3afef011..5aa45cb18b 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
-@@ -146,12 +146,16 @@
+@@ -146,12 +146,21 @@
  	"ucos_bin_file=solox-ucosii.bin\0" \
  	"ucos_bin_addr=0x200000\0" \
  	"ucos_bin_size=0x300000\0" \
--	"ucosboot=echo Booting uC/OS ...;" \
 +	"ucos_ivt_addr=0x2FDF00\0" \
-+	"ucosboot=echo Booting uC/OS ...; " \
+ 	"ucosboot=echo Booting uC/OS ...;" \
  		"fecinit; " \
  		"sf probe; " \
  		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
 -		"dcache off; " \
 -		"go 80000000\0" \
-+		"if is_sec_state; then " \
-+			"echo Decrypting uC/OS with HAB authentication...; " \
-+		 	"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++		"if sf check_enc 80800000 ${ucos_bin_addr} ${ucos_ivt_addr}; then " \
++			"if is_sec_state; then " \
++				"echo \"Secure board - HAB authenticating & decrypting uC/OS...\"; " \
++				"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++			"else " \
++				"echo \"Open board - HAB decrypting uC/OS...\"; " \
++				"hab_auth_img 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++			"fi; " \
 +		"fi; " \
 +		"dcache off; go 80000000;\0" \
  	"ucosnetboot=echo Download uC/OS image via tftp ...;" \

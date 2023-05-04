@@ -20,5 +20,4 @@ SRC_URI += "file://0007-Add-TCP-wget-command.patch"
 
 SRC_URI += "file://0008-Added-non-standard-TFTP-port.patch"
 
-# Changed default boot option to boot (HAB) encrypted uCOS
 SRC_URI += "file://0009-Added-HAB-authentication-for-uCOS-boot.patch"
