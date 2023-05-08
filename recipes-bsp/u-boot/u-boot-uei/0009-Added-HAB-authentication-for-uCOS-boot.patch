@@ -1,12 +1,14 @@
-From 8399dc944f14027227dcdee61d11284a50ae128f Mon Sep 17 00:00:00 2001
-From: danie007 <daniel.selvan@jasmin-infotech.com>
-Date: Fri, 3 Mar 2023 17:16:27 +0530
+From 6b66800307cfa82440ce36484487a135a547fc4a Mon Sep 17 00:00:00 2001
+From: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
+Date: Mon, 8 May 2023 14:47:03 +0530
 Subject: [PATCH] Added HAB authentication check for uCOS boot
 
 - Added "is_sec_state" command in u-boot which returns the state of the
   SEC_CONFIG fuse
 - If board is closed only authenticated/encrypted uCOS is allowed to
   boot. This is ensured by hab_auth_img_or_fail
+- For open board we're checking the flashed uCOS (whether encrypted or
+  not) and issue hab_auth_img if it's an encrypted uCOS.
 
 NOTE:
 1. This is verified in both open & closed UEI board and works as expected
@@ -14,11 +16,11 @@ NOTE:
    the IVT and size are hardcoded in U-Boot environment
 
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
-Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
+Signed-off-by: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
 ---
  arch/arm/mach-imx/hab.c   | 18 ++++++++++++++++++
- include/configs/pdnasx6.h | 10 +++++++---
- 2 files changed, 25 insertions(+), 3 deletions(-)
+ include/configs/pdnasx6.h | 12 ++++++++++++
+ 2 files changed, 30 insertions(+)
 
 diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
 index e2ede9985d..c417f2113b 100644
@@ -57,26 +59,29 @@ index e2ede9985d..c417f2113b 100644
  
  /* Get CSF Header length */
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..354fea6308 100644
+index fd3afef011..0a6cc786b8 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
-@@ -146,12 +146,16 @@
+@@ -146,10 +146,22 @@
  	"ucos_bin_file=solox-ucosii.bin\0" \
  	"ucos_bin_addr=0x200000\0" \
  	"ucos_bin_size=0x300000\0" \
--	"ucosboot=echo Booting uC/OS ...;" \
 +	"ucos_ivt_addr=0x2FDF00\0" \
-+	"ucosboot=echo Booting uC/OS ...; " \
+ 	"ucosboot=echo Booting uC/OS ...;" \
  		"fecinit; " \
  		"sf probe; " \
  		"sf read 80000000 ${ucos_bin_addr} ${ucos_bin_size}; " \
--		"dcache off; " \
--		"go 80000000\0" \
-+		"if is_sec_state; then " \
-+			"echo Decrypting uC/OS with HAB authentication...; " \
-+		 	"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++		"setexpr DEKBLOB_TAG_OFFSET ${ucos_bin_size} - 0xE0; " \
++		"setexpr DEKBLOB_TAG_LOC 0x80000000 + ${DEKBLOB_TAG_OFFSET}; " \
++		"if itest.b *$DEKBLOB_TAG_LOC == 0x81; then " \
++			"if is_sec_state; then " \
++				"echo \"Secure board - HAB authenticating & decrypting uC/OS...\"; " \
++				"hab_auth_img_or_fail 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++			"else " \
++				"echo \"Open board - HAB decrypting uC/OS...\"; " \
++				"hab_auth_img 80000000 ${ucos_bin_size} ${ucos_ivt_addr}; " \
++			"fi; " \
 +		"fi; " \
-+		"dcache off; go 80000000;\0" \
+ 		"dcache off; " \
+ 		"go 80000000\0" \
  	"ucosnetboot=echo Download uC/OS image via tftp ...;" \
- 		"fecinit; " \
- 		"tftp 80000000 ${ucos_bin_file}; " \
