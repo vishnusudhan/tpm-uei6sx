@@ -1,6 +1,6 @@
-From 6b66800307cfa82440ce36484487a135a547fc4a Mon Sep 17 00:00:00 2001
+From 9b1c1db34afb81c858cba8d7ef71e9e38917a681 Mon Sep 17 00:00:00 2001
 From: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
-Date: Mon, 8 May 2023 14:47:03 +0530
+Date: Fri, 19 May 2023 11:07:59 +0530
 Subject: [PATCH] Added HAB authentication check for uCOS boot
 
 - Added "is_sec_state" command in u-boot which returns the state of the
@@ -12,15 +12,15 @@ Subject: [PATCH] Added HAB authentication check for uCOS boot
 
 NOTE:
 1. This is verified in both open & closed UEI board and works as expected
-2. The total size allocated to uCOS at UEI QSPI is 0x00300000 and hence
+2. The total size allocated to uCOS at UEI QSPI is 0x00500000 and hence
    the IVT and size are hardcoded in U-Boot environment
 
 Signed-off-by: Sivaprasad.sv <sivaprasad.sv@jasmin-infotech.com>
 Signed-off-by: Daniel Selvan D <daniel.selvan@jasmin-infotech.com>
 ---
  arch/arm/mach-imx/hab.c   | 18 ++++++++++++++++++
- include/configs/pdnasx6.h | 12 ++++++++++++
- 2 files changed, 30 insertions(+)
+ include/configs/pdnasx6.h | 14 +++++++++++++-
+ 2 files changed, 31 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/mach-imx/hab.c b/arch/arm/mach-imx/hab.c
 index e2ede9985d..c417f2113b 100644
@@ -59,14 +59,16 @@ index e2ede9985d..c417f2113b 100644
  
  /* Get CSF Header length */
 diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
-index fd3afef011..0a6cc786b8 100644
+index fd3afef011..a97a8e52e1 100644
 --- a/include/configs/pdnasx6.h
 +++ b/include/configs/pdnasx6.h
-@@ -146,10 +146,22 @@
+@@ -145,11 +145,23 @@
+ 	"quietargs=quiet loglevel=2\0" \
  	"ucos_bin_file=solox-ucosii.bin\0" \
  	"ucos_bin_addr=0x200000\0" \
- 	"ucos_bin_size=0x300000\0" \
-+	"ucos_ivt_addr=0x2FDF00\0" \
+-	"ucos_bin_size=0x300000\0" \
++	"ucos_bin_size=0x500000\0" \
++	"ucos_ivt_addr=0x4FDF00\0" \
  	"ucosboot=echo Booting uC/OS ...;" \
  		"fecinit; " \
  		"sf probe; " \
