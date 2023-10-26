@@ -21,3 +21,6 @@ SRC_URI += "file://0007-Add-TCP-wget-command.patch"
 SRC_URI += "file://0008-Added-non-standard-TFTP-port.patch"
 
 SRC_URI += "file://0009-Added-HAB-authentication-for-uCOS-boot.patch"
+
+# SET VAR & PCR extend
+SRC_URI += "${@bb.utils.contains('TPM_ENABLE', '1', 'file://0010-Added-TPM-configs-set-var-pcr-extend.patch', '', d)}"

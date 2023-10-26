@@ -12,3 +12,6 @@ IMAGE_FSTYPES_append = " wic.gz"
 # Use with "core-image-minimal"
 # Uncomment the following lines to build a minimal sized image (for testing)
 # TEST_BUILD = "1"
+
+# Set as 1 to enable TPM
+TPM_ENABLE = "0"

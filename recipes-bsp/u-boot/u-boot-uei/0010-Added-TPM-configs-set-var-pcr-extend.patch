@@ -1,0 +1,232 @@
+From b1a556fd6bd55330d81986c9c1a5d25f546eab54 Mon Sep 17 00:00:00 2001
+From: vishnusudhan <vishnusudhan.kj@jasmin-infotech.com>
+Date: Thu, 19 Oct 2023 10:58:21 +0530
+Subject: [PATCH] Added TPM configs set var pcr extend
+
+---
+ cmd/Kconfig                              |  7 ++
+ cmd/Makefile                             |  1 +
+ cmd/mem_misc.c                           | 84 ++++++++++++++++++++++++
+ configs/uei-pdna6sx-66Mhz_qspi_defconfig | 15 +++++
+ configs/uei-pdna6sx_qspi_defconfig       | 15 +++++
+ include/configs/pdnasx6.h                | 27 +++++++-
+ 6 files changed, 148 insertions(+), 1 deletion(-)
+ create mode 100644 cmd/mem_misc.c
+
+diff --git a/cmd/Kconfig b/cmd/Kconfig
+index 36c57c1516..b7a8879db8 100644
+--- a/cmd/Kconfig
++++ b/cmd/Kconfig
+@@ -646,6 +646,13 @@ config CMD_MEMORY
+ 	    base - print or set address offset
+ 	    loop - initialize loop on address range
+ 
++config CMD_APPEND_VAR
++	bool "setvar"
++	help
++		Read the memory by given size and convert value as hex string
++		format and set to bootargs/kernel args variable for user space
++		access
++
+ config CMD_MEM_SEARCH
+ 	bool "ms - Memory search"
+ 	help
+diff --git a/cmd/Makefile b/cmd/Makefile
+index d46ffd7021..5f1d6226d6 100644
+--- a/cmd/Makefile
++++ b/cmd/Makefile
+@@ -93,6 +93,7 @@ obj-$(CONFIG_CMD_LSBLK) += lsblk.o
+ obj-$(CONFIG_ID_EEPROM) += mac.o
+ obj-$(CONFIG_CMD_MD5SUM) += md5sum.o
+ obj-$(CONFIG_CMD_MEMORY) += mem.o
++obj-$(CONFIG_CMD_APPEND_VAR) += mem_misc.o
+ obj-$(CONFIG_CMD_IO) += io.o
+ obj-$(CONFIG_CMD_MFSL) += mfsl.o
+ obj-$(CONFIG_CMD_MII) += mii.o
+diff --git a/cmd/mem_misc.c b/cmd/mem_misc.c
+new file mode 100644
+index 0000000000..4e272eb30d
+--- /dev/null
++++ b/cmd/mem_misc.c
+@@ -0,0 +1,84 @@
++#include <common.h>
++#include <console.h>
++#include <bootretry.h>
++#include <cli.h>
++#include <command.h>
++#include <console.h>
++#include <flash.h>
++#include <hash.h>
++#include <log.h>
++#include <mapmem.h>
++#include <rand.h>
++#include <watchdog.h>
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <linux/bitops.h>
++#include <linux/compiler.h>
++#include <linux/ctype.h>
++#include <linux/delay.h>
++
++static int do_mem_misc_setvar(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
++{
++	ulong addr;
++	ulong size;
++	ulong endianess;
++	int i;
++	uchar data[32];
++	char hex_data[80];
++
++	if (argc != 5)
++	{
++		printf("Usage: %s <variable> <address> <size> <rev>\n", argv[0]);
++		return CMD_RET_USAGE;
++	}
++
++	char *var_name = argv[1];
++	addr = simple_strtoul(argv[2], NULL, 16);
++	size = simple_strtoul(argv[3], NULL, 16);
++	endianess = simple_strtoul(argv[4], NULL, 16);
++ 
++	if (size <= 0 || size > 32)
++	{
++		printf("Invalid size (must be between 1 and 32 bytes)\n");
++		return CMD_RET_FAILURE;
++	}
++
++	if (env_set(var_name, NULL) != 0)
++	{
++		printf("Failed to clear environment variable\n");
++		return CMD_RET_FAILURE;
++	}
++
++	// Read & copy data from memory
++	if (endianess == 0) {
++		for (i = 0; i < size; i++) {
++			data[i] = *(uchar *)(addr + i);
++		}
++
++	} else if (endianess >= 1) {
++		int j = 0;
++		for (i = size - 1; i >= 0 ; i--) {
++			data[j] = *(uchar *)(addr + i);
++			j++;
++		}
++	}
++
++	// Convert binary to hexadecimal string
++	for (i = 0; i < size; i++) {
++	    snprintf(hex_data + i * 2, sizeof(hex_data) - i * 2, "%02x", data[i]);
++	}
++
++        if (env_set(var_name,hex_data ) != 0)
++        {
++            printf("Failed to set environment variable\n");
++            return CMD_RET_FAILURE;
++        }
++	
++    	return CMD_RET_SUCCESS;
++}
++
++/**************************************************/
++U_BOOT_CMD(
++	setvar, 5, 1, do_mem_misc_setvar,
++	"Read memory content and store it in an environment variable passed",
++	"<variable> <address> <size> <rev>");
+\ No newline at end of file
+diff --git a/configs/uei-pdna6sx-66Mhz_qspi_defconfig b/configs/uei-pdna6sx-66Mhz_qspi_defconfig
+index f70af535ad..789baefee8 100644
+--- a/configs/uei-pdna6sx-66Mhz_qspi_defconfig
++++ b/configs/uei-pdna6sx-66Mhz_qspi_defconfig
+@@ -274,3 +274,18 @@ CONFIG_IMX_HAB=y
+ CONFIG_FAT_WRITE=y
+ CONFIG_CMD_DEKBLOB=y
+ CONFIG_CMD_PRIBLOB=y
++
++# (SET VAR CMD)
++CONFIG_CMD_APPEND_VAR=y
++
++# TPM Enable
++CONFIG_TPM_V1=y
++CONFIG_TPM_TIS_SANDBOX=y
++CONFIG_TPM_V2=y
++CONFIG_TPM2_TIS_SANDBOX=y
++CONFIG_TPM2_TIS_SPI=y
++CONFIG_TPM=y
++CONFIG_CMD_TPM_V1=y
++CONFIG_CMD_TPM_V2=y
++CONFIG_CMD_TPM=y
++CONFIG_CMD_TPM_TEST=y
+diff --git a/configs/uei-pdna6sx_qspi_defconfig b/configs/uei-pdna6sx_qspi_defconfig
+index cdb8677d92..bc53610099 100644
+--- a/configs/uei-pdna6sx_qspi_defconfig
++++ b/configs/uei-pdna6sx_qspi_defconfig
+@@ -280,3 +280,18 @@ CONFIG_IMX_HAB=y
+ CONFIG_FAT_WRITE=y
+ CONFIG_CMD_DEKBLOB=y
+ CONFIG_CMD_PRIBLOB=y
++
++# (SET VAR CMD)
++CONFIG_CMD_APPEND_VAR=y
++
++# TPM Enable
++CONFIG_TPM_V1=y
++CONFIG_TPM_TIS_SANDBOX=y
++CONFIG_TPM_V2=y
++CONFIG_TPM2_TIS_SANDBOX=y
++CONFIG_TPM2_TIS_SPI=y
++CONFIG_TPM=y
++CONFIG_CMD_TPM_V1=y
++CONFIG_CMD_TPM_V2=y
++CONFIG_CMD_TPM=y
++CONFIG_CMD_TPM_TEST=y
+diff --git a/include/configs/pdnasx6.h b/include/configs/pdnasx6.h
+index a97a8e52e1..084c2dead0 100644
+--- a/include/configs/pdnasx6.h
++++ b/include/configs/pdnasx6.h
+@@ -98,12 +98,16 @@
+ 	"boot_fdt=try\0" \
+ 	"ip_dyn=no\0" \
+ 	"panel=PDNASX6HDMI\0" \
++	"img_start=0x1000\0" \
++	"srk_header=0x10\0" \
++	"pubkey_len_addr=5\0" \
++	"key_addr=0x88800000\0" \
+ 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
+ 	"mmcpart=1\0" \
+ 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+ 	"mmcautodetect=yes\0" \
+ 	"mmcargs=setenv bootargs ${quietargs} console=${console},${baudrate} root=${mmcroot} rw ${nohdmiargs} ${pcieargs}\0" \
+-	"mmcboot=run mmcargs;run loadimage;run loadfdt;bootz ${loadaddr} - ${fdt_addr}\0" \
++	"mmcboot=run mmcargs;run do_pcr_extend;run loadimage;run loadfdt;bootz ${loadaddr} - ${fdt_addr}\0" \
+ 	"loadbootscript=" \
+ 		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+ 	"bootscript=echo Running bootscript from mmc ...; " \
+@@ -142,6 +146,27 @@
+ 				"bootz; " \
+ 			"fi;" \
+ 		"fi;\0" \
++	"do_pcr_extend=echo Verify board_status; " \
++        "if is_sec_state; then " \
++		"sf probe; " \
++		"sf read 88000000 ${img_start} 0x20; " \
++		"setexpr csf_start 88000000 + 0x18; " \
++		"setvar csf_ptr ${csf_start} 4 1; " \
++		"setexpr csf_hdr_len ${csf_ptr} + 0x1; " \
++		"setvar csf_len ${csf_hdr_len} 2 0; " \
++		"setexpr csf_hdr ${csf_ptr} + ${csf_len}; " \
++		"setexpr pub_key_ptr ${csf_hdr} + ${pubkey_len_addr}; " \
++		"setvar pubkey_len ${pub_key_ptr} 2 0; " \
++		"setexpr key_len ${pubkey_len} - 0xF; " \
++		"setexpr key_offset ${csf_hdr} + ${srk_header}; " \
++		"cp.b ${key_offset} ${key_addr} ${key_len}; " \
++		"hash sha256 ${key_addr} ${key_len} pcr_hash; " \
++		"tpm2 init; " \
++		"tpm2 startup TPM2_SU_CLEAR; " \
++		"tpm2 pcr_extend 16 ${pcr_hash}; " \
++        "else " \
++		"echo Open board..skipping TPM pcr extend...; " \
++        "fi;\0" \
+ 	"quietargs=quiet loglevel=2\0" \
+ 	"ucos_bin_file=solox-ucosii.bin\0" \
+ 	"ucos_bin_addr=0x200000\0" \
